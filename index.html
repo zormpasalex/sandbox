@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Meeting Room Booker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the app */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top to prevent excessive vertical centering on large content */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px; /* Rounded corners for the main container */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 900px; /* Max width for larger screens */
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        input[type="text"], input[type="date"], select, textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 8px; /* Rounded corners for inputs */
+            padding: 12px 16px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+        }
+        /* Style for the time input text field */
+        .time-input-field {
+            border: 1px solid #d1d5db;
+            border-radius: 8px; /* Rounded corners for inputs */
+            padding: 12px 0; /* Adjust padding for text input within time control */
+            /* Removed fixed width to allow responsiveness */
+            text-align: center;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .time-input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        /* General button styling */
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px; /* Rounded corners for buttons */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+        }
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        /* Style for increment/decrement buttons */
+        .time-control-button {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #4b5563; /* Gray-700 */
+            width: 30px; /* Fixed width for small buttons */
+            height: 30px; /* Fixed height for small buttons */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px; /* Slightly less rounded than main buttons */
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            box-shadow: none; /* No shadow for these small buttons */
+            padding: 0; /* Remove default padding */
+            flex-shrink: 0; /* Prevent buttons from shrinking */
+        }
+        .time-control-button:hover {
+            background-color: #d1d5db; /* Gray-300 */
+            color: #1f2937; /* Gray-900 */
+            transform: none; /* No transform on hover for these */
+        }
+        .time-control-button:active {
+            background-color: #9ca3af; /* Gray-400 */
+        }
+
+        .section-title {
+            font-size: 1.75rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* gray-900 */
+            margin-bottom: 16px;
+        }
+        .card {
+            background-color: #f9fafb; /* light gray background for cards */
+            border-radius: 16px; /* Consistent rounded corners */
+            padding: 24px; /* Adjusted padding */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Stronger shadow */
+            display: flex;
+            flex-direction: column;
+            gap: 16px; /* Adjusted gap */
+        }
+        .error-message {
+            color: #ef4444; /* red-500 */
+            font-size: 0.875rem; /* text-sm */
+            margin-top: 8px;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280; /* gray-500 */
+        }
+        .modal-close-button:hover {
+            color: #1f2937; /* gray-900 */
+        }
+        /* Style for selected room card */
+        .room-card.selected {
+            border-color: #3b82f6; /* Blue border for selected */
+            background-color: #e0f2fe; /* Light blue background for selected */
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); /* Stronger shadow for selected */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Message Modal -->
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close-button" onclick="closeMessageModal()">&times;</span>
+                <p id="modalMessage" class="text-lg font-medium text-gray-800"></p>
+                <button onclick="closeMessageModal()" class="mt-6">OK</button>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <p id="confirmMessage" class="text-lg font-medium text-gray-800 mb-6"></p>
+                <div class="flex justify-center gap-4">
+                    <button id="confirmYesBtn" class="bg-red-500 hover:bg-red-600">Yes</button>
+                    <button id="confirmNoBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800">No</button>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="section-title text-center">Meeting Room Booking</h1>
+
+        <!-- Upcoming Bookings Section - Moved to top and changed to grid layout -->
+        <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
+            <h2 class="text-2xl font-semibold text-gray-800">Upcoming Bookings</h2>
+            <div id="bookingList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <!-- Bookings will be loaded here by JavaScript -->
+                <p id="noBookingsMessage" class="text-gray-500 italic md:col-span-full">No upcoming bookings. Book a room below!</p>
+            </div>
+        </div>
+
+        <!-- Second Row: Available Rooms (Left) and Book a Room (Right) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
+            <!-- Available Rooms Section - Moved to second row, left -->
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-gray-800">Available Rooms</h2>
+                <div id="roomList" class="grid grid-cols-1 gap-4">
+                    <!-- Rooms will be loaded here by JavaScript -->
+                    <p id="noRoomsMessage" class="text-gray-500 italic">No rooms added yet. Add a room below!</p>
+                </div>
+            </div>
+
+            <!-- Book Room Section - Moved to second row, right -->
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-gray-800">Book a Room</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <!-- Row 1: Selected Room Display (Left), Date (Right) -->
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-1">Selected Room</label>
+                        <p id="selectedRoomDisplay" class="text-lg font-semibold text-blue-700 mb-2 hidden">No room selected</p>
+                        <p id="bookingRoomError" class="error-message"></p>
+                    </div>
+                    <div>
+                        <label for="bookingDate" class="block text-gray-700 text-sm font-medium mb-1">Date</label>
+                        <input type="date" id="bookingDate" class="focus:ring-blue-500 focus:border-blue-500">
+                        <p id="bookingDateError" class="error-message"></p>
+                    </div>
+
+                    <!-- Row 2 & 3: Purpose (Left, spanning 2 rows), Start Time (Right, Row 2), End Time (Right, Row 3) -->
+                    <div class="row-span-2"> <!-- Purpose spans two rows -->
+                        <label for="bookingPurpose" class="block text-gray-700 text-sm font-medium mb-1">Purpose <span class="text-gray-500 text-xs">(Optional)</span></label>
+                        <textarea id="bookingPurpose" placeholder="e.g., Team meeting, Client presentation" rows="7" class="focus:ring-blue-500 focus:border-blue-500 h-full"></textarea>
+                        <p id="bookingPurposeError" class="error-message"></p>
+                    </div>
+                    
+                    <!-- Start Time Control (Right, Row 2) -->
+                    <div>
+                        <label for="bookingStartTime" class="block text-gray-700 text-sm font-medium mb-1">Start Time</label>
+                        <div class="flex items-center justify-around space-x-2"> <!-- Changed justify-center to justify-around -->
+                            <div class="flex flex-col">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', 1)" class="time-control-button mb-1">▲</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', -1)" class="time-control-button">▼</button>
+                            </div>
+                            <input type="text" id="bookingStartTime" value="09:00" readonly class="time-input-field w-full"> <!-- Added w-full -->
+                            <div class="flex flex-col">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', 1)" class="time-control-button mb-1">▲</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', -1)" class="time-control-button">▼</button>
+                            </div>
+                        </div>
+                        <p id="bookingStartTimeError" class="error-message"></p>
+                    </div>
+
+                    <!-- End Time Control (Right, Row 3) - This will naturally fall into the third row on the right due to grid flow -->
+                    <div>
+                        <label for="bookingEndTime" class="block text-gray-700 text-sm font-medium mb-1">End Time</label>
+                        <div class="flex items-center justify-around space-x-2"> <!-- Changed justify-center to justify-around -->
+                            <div class="flex flex-col">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', 1)" class="time-control-button mb-1">▲</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', -1)" class="time-control-button">▼</button>
+                            </div>
+                            <input type="text" id="bookingEndTime" value="10:00" readonly class="time-input-field w-full"> <!-- Added w-full -->
+                            <div class="flex flex-col">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', 1)" class="time-control-button mb-1">▲</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', -1)" class="time-control-button">▼</button>
+                            </div>
+                        </div>
+                        <p id="bookingEndTimeError" class="error-message"></p>
+                    </div>
+                    
+                    <!-- Book Room Button - Span both columns to center it -->
+                    <div class="md:col-span-2 flex justify-center"> <!-- Added flex justify-center -->
+                        <button onclick="bookRoom()">Book Room</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Room Section - Moved to last row -->
+        <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
+            <h2 class="text-2xl font-semibold text-gray-800">Add New Room</h2>
+            <div class="flex flex-col gap-4">
+                <div>
+                    <label for="roomName" class="block text-gray-700 text-sm font-medium mb-1">Room Name</label>
+                    <input type="text" id="roomName" placeholder="e.g., Conference Room A" class="focus:ring-blue-500 focus:border-blue-500">
+                    <p id="roomNameError" class="error-message"></p>
+                </div>
+                <button onclick="addRoom()">Add Room</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Variables and Constants ---
+        const ROOMS_STORAGE_KEY = 'meetingRooms';
+        const BOOKINGS_STORAGE_KEY = 'roomBookings';
+
+        // Global state for the room selected for booking
+        let selectedRoomIdForBooking = null;
+        let selectedRoomNameForBooking = null;
+
+        // --- Utility Functions ---
+
+        /**
+         * Shows a custom modal message to the user.
+         * @param {string} message - The message to display.
+         */
+        function showMessageModal(message) {
+            const modal = document.getElementById('messageModal');
+            const modalMessage = document.getElementById('modalMessage');
+            modalMessage.textContent = message;
+            modal.classList.add('show');
+        }
+
+        /**
+         * Closes the custom modal message.
+         */
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.remove('show');
+        }
+
+        /**
+         * Shows a custom confirmation modal to the user.
+         * @param {string} message - The message to display in the confirmation modal.
+         * @param {Function} onConfirm - Callback function to execute if 'Yes' is clicked.
+         */
+        function showConfirmModal(message, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmYesBtn = document.getElementById('confirmYesBtn');
+            const confirmNoBtn = document.getElementById('confirmNoBtn');
+
+            confirmMessage.textContent = message;
+            modal.classList.add('show');
+
+            const handleYes = () => {
+                onConfirm(true);
+                modal.classList.remove('show');
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+            };
+
+            const handleNo = () => {
+                onConfirm(false);
+                modal.classList.remove('show');
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+            };
+
+            confirmYesBtn.addEventListener('click', handleYes);
+            confirmNoBtn.addEventListener('click', handleNo);
+        }
+
+
+        /**
+         * Gets data from localStorage.
+         * @param {string} key - The key for the data.
+         * @returns {Array} - Parsed array of data, or empty array if not found.
+         */
+        function getData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error parsing data from localStorage for key "${key}":`, e);
+                return [];
+            }
+        }
+
+        /**
+         * Saves data to localStorage.
+         * @param {string} key - The key for the data.
+         * @param {Array} data - The array of data to save.
+         */
+        function saveData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving data to localStorage for key "${key}":`, e);
+                showMessageModal("Could not save data. Your device storage might be full or permissions are restricted.");
+            }
+        }
+
+        /**
+         * Clears an error message for a given input field.
+         * @param {string} elementId - The ID of the input element.
+         */
+        function clearError(elementId) {
+            const errorElement = document.getElementById(`${elementId}Error`);
+            if (errorElement) {
+                errorElement.textContent = '';
+            }
+        }
+
+        /**
+         * Displays an error message for a given input field.
+         * @param {string} elementId - The ID of the input element.
+         * @param {string} message - The error message to display.
+         */
+        function displayError(elementId, message) {
+            const errorElement = document.getElementById(`${elementId}Error`);
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+        }
+
+        // --- Room Management Functions ---
+
+        /**
+         * Adds a new room to the list.
+         */
+        function addRoom() {
+            const roomNameInput = document.getElementById('roomName');
+            const roomName = roomNameInput.value.trim();
+            clearError('roomName');
+
+            if (!roomName) {
+                displayError('roomName', 'Room name cannot be empty.');
+                return;
+            }
+
+            let rooms = getData(ROOMS_STORAGE_KEY);
+            if (rooms.some(room => room.name.toLowerCase() === roomName.toLowerCase())) {
+                displayError('roomName', 'A room with this name already exists.');
+                return;
+            }
+
+            rooms.push({ id: Date.now().toString(), name: roomName });
+            saveData(ROOMS_STORAGE_KEY, rooms);
+            roomNameInput.value = ''; // Clear input
+            renderRooms(); // Re-render room list
+            showMessageModal(`Room "${roomName}" added successfully!`);
+        }
+
+        /**
+         * Deletes a room and its associated bookings.
+         * @param {string} roomId - The ID of the room to delete.
+         * @param {string} roomName - The name of the room to delete.
+         */
+        function deleteRoom(roomId, roomName) {
+            showConfirmModal(`Are you sure you want to delete room "${roomName}"? This will also delete all bookings for this room.`, (confirmed) => {
+                if (confirmed) {
+                    let rooms = getData(ROOMS_STORAGE_KEY);
+                    rooms = rooms.filter(room => room.id !== roomId);
+                    saveData(ROOMS_STORAGE_KEY, rooms);
+
+                    let bookings = getData(BOOKINGS_STORAGE_KEY);
+                    bookings = bookings.filter(booking => booking.roomId !== roomId);
+                    saveData(BOOKINGS_STORAGE_KEY, bookings);
+
+                    // If the deleted room was selected for booking, clear the selection
+                    if (selectedRoomIdForBooking === roomId) {
+                        selectedRoomIdForBooking = null;
+                        selectedRoomNameForBooking = null;
+                        document.getElementById('selectedRoomDisplay').textContent = 'No room selected';
+                        document.getElementById('selectedRoomDisplay').classList.remove('hidden'); // Ensure it's visible with default text
+                    }
+
+                    renderRooms();
+                    renderBookings();
+                    showMessageModal(`Room "${roomName}" and its bookings deleted.`);
+                }
+            });
+        }
+
+        /**
+         * Selects a room from the available list for booking.
+         * @param {string} roomId - The ID of the room to select.
+         * @param {string} roomName - The name of the room to select.
+         */
+        function selectRoomForBooking(roomId, roomName) {
+            selectedRoomIdForBooking = roomId;
+            selectedRoomNameForBooking = roomName;
+
+            const selectedRoomDisplay = document.getElementById('selectedRoomDisplay');
+            selectedRoomDisplay.textContent = `Selected: ${roomName}`;
+            selectedRoomDisplay.classList.remove('hidden'); // Ensure it's visible
+
+            // Remove 'selected' class from all room cards
+            document.querySelectorAll('#roomList .room-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add 'selected' class to the clicked room card
+            const clickedCard = document.querySelector(`#roomList div[data-room-id="${roomId}"]`);
+            if (clickedCard) {
+                clickedCard.classList.add('selected');
+            }
+
+            clearError('bookingRoom'); // Clear any previous error for room selection
+        }
+
+        /**
+         * Renders the list of available rooms, considering the currently selected booking date and time.
+         */
+        function renderRooms() {
+            const roomListDiv = document.getElementById('roomList');
+            const noRoomsMessage = document.getElementById('noRoomsMessage');
+            let allRooms = getData(ROOMS_STORAGE_KEY);
+            let allBookings = getData(BOOKINGS_STORAGE_KEY);
+
+            const bookingDate = document.getElementById('bookingDate').value;
+            const bookingStartTime = document.getElementById('bookingStartTime').value;
+            const bookingEndTime = document.getElementById('bookingEndTime').value;
+
+            roomListDiv.innerHTML = ''; // Clear existing list
+
+            let availableRoomsCount = 0;
+
+            allRooms.forEach(room => {
+                let isAvailableForBookingSlot = true; // Assume available until proven otherwise
+
+                // Only filter rooms if a date, start time, and end time are all provided
+                if (bookingDate && bookingStartTime && bookingEndTime) {
+                    const tentativeStartDateTime = new Date(`${bookingDate}T${bookingStartTime}`);
+                    const tentativeEndDateTime = new Date(`${bookingDate}T${bookingEndTime}`);
+
+                    // If selected times are invalid (end before start), room is not available for this specific invalid slot
+                    if (tentativeStartDateTime >= tentativeEndDateTime) {
+                        isAvailableForBookingSlot = false;
+                    } else {
+                        // Check for overlaps with existing bookings for this room on the selected date
+                        const overlappingBooking = allBookings.find(booking => {
+                            if (booking.roomId === room.id && booking.date === bookingDate) {
+                                const existingStart = new Date(`${booking.date}T${booking.startTime}`);
+                                const existingEnd = new Date(`${booking.date}T${booking.endTime}`);
+
+                                // Overlap condition: (StartA < EndB) && (EndA > StartB)
+                                return (tentativeStartDateTime < existingEnd && tentativeEndDateTime > existingStart);
+                            }
+                            return false;
+                        });
+
+                        if (overlappingBooking) {
+                            isAvailableForBookingSlot = false;
+                        }
+                    }
+                }
+
+                // A room is shown in "Available Rooms" if it's available for the selected slot,
+                // OR if no specific slot (date, start time, end time) is selected.
+                if (isAvailableForBookingSlot) {
+                    availableRoomsCount++;
+                    const roomCard = document.createElement('div');
+                    roomCard.className = `room-card card flex justify-between items-center p-4 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg shadow-sm cursor-pointer ${selectedRoomIdForBooking === room.id ? 'selected' : ''}`;
+                    roomCard.setAttribute('data-room-id', room.id); // Add data attribute for easy selection
+                    // Use event.stopPropagation() to prevent the delete button click from also selecting the room
+                    roomCard.onclick = () => selectRoomForBooking(room.id, room.name);
+                    roomCard.innerHTML = `
+                        <span class="font-medium text-lg">${room.name}</span>
+                        <button type="button" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.name}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm">Delete</button>
+                    `;
+                    roomListDiv.appendChild(roomCard);
+                }
+            });
+
+            if (availableRoomsCount === 0) {
+                //noRoomsMessage.style.display = 'block';
+                if (allRooms.length === 0) {
+                    noRoomsMessage.textContent = 'No rooms added yet. Add a room below!';
+                } else if (bookingDate && bookingStartTime && bookingEndTime) {
+                    noRoomsMessage.textContent = 'No rooms available for the selected date and time.';
+                } else {
+                    // If no full booking slot is selected, and there are rooms, but none are available (e.g., all have some future booking)
+                    noRoomsMessage.textContent = 'No rooms currently available.'; 
+                }
+            } else {
+                //noRoomsMessage.style.display = 'none';
+            }
+        }
+
+        /**
+         * Parses a time string (HH:MM) into an object with hour and minute.
+         * @param {string} timeString - The time string in HH:MM format.
+         * @returns {{hour: number, minute: number}} - Object with hour and minute.
+         */
+        function parseTime(timeString) {
+            const parts = timeString.split(':');
+            return {
+                hour: parseInt(parts[0] || '0', 10),
+                minute: parseInt(parts[1] || '0', 10)
+            };
+        }
+
+        /**
+         * Formats hour and minute into a HH:MM time string.
+         * @param {number} hour - The hour (0-23).
+         * @param {number} minute - The minute (0-59).
+         * @returns {string} - Formatted time string (HH:MM).
+         */
+        function formatTime(hour, minute) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        /**
+         * Adjusts the time in a given input field.
+         * @param {string} inputId - The ID of the time input field.
+         * @param {'hour'|'minute'} unit - The unit to adjust ('hour' or 'minute').
+         * @param {number} amount - The amount to adjust by (e.g., 1 for increment, -1 for decrement).
+         */
+        function adjustTime(inputId, unit, amount) {
+            const inputElement = document.getElementById(inputId);
+            let { hour, minute } = parseTime(inputElement.value);
+
+            if (unit === 'hour') {
+                hour = (hour + amount + 24) % 24; // Handle 24-hour rollover
+            } else if (unit === 'minute') {
+                minute += amount;
+                if (minute >= 60) {
+                    minute -= 60;
+                    hour = (hour + 1 + 24) % 24;
+                } else if (minute < 0) {
+                    minute += 60;
+                    hour = (hour - 1 + 24) % 24;
+                }
+            }
+            inputElement.value = formatTime(hour, minute);
+            renderRooms(); // Re-render available rooms when time changes
+        }
+
+        // --- Booking Management Functions ---
+
+        /**
+         * Books a room.
+         */
+        function bookRoom() {
+            const bookingDateInput = document.getElementById('bookingDate');
+            const bookingStartTimeInput = document.getElementById('bookingStartTime');
+            const bookingEndTimeInput = document.getElementById('bookingEndTime');
+            const bookingPurposeInput = document.getElementById('bookingPurpose');
+
+            const date = bookingDateInput.value;
+            const startTime = bookingStartTimeInput.value;
+            const endTime = bookingEndTimeInput.value;
+            const purpose = bookingPurposeInput.value.trim();
+
+            // Clear previous errors
+            clearError('bookingRoom');
+            clearError('bookingDate');
+            clearError('bookingStartTime');
+            clearError('bookingEndTime');
+            clearError('bookingPurpose');
+
+            let isValid = true;
+
+            if (!selectedRoomIdForBooking) {
+                displayError('bookingRoom', 'Please select a room from the available list.');
+                isValid = false;
+            }
+            if (!date) {
+                displayError('bookingDate', 'Please select a date.');
+                isValid = false;
+            }
+            if (!startTime) {
+                displayError('bookingStartTime', 'Please enter a start time.');
+                isValid = false;
+            }
+            if (!endTime) {
+                displayError('bookingEndTime', 'Please enter an end time.');
+                isValid = false;
+            }
+            // Purpose is optional, so no 'if (!purpose)' check needed here.
+
+            if (!isValid) {
+                return;
+            }
+
+            // Validate time order
+            const startDateTime = new Date(`${date}T${startTime}`);
+            const endDateTime = new Date(`${date}T${endTime}`);
+
+            if (startDateTime >= endDateTime) {
+                displayError('bookingEndTime', 'End time must be after start time.');
+                isValid = false;
+            }
+
+            // Re-check for overlaps with the selected room, in case anything changed since selection
+            const bookings = getData(BOOKINGS_STORAGE_KEY);
+            const overlappingBooking = bookings.find(booking => {
+                if (booking.roomId === selectedRoomIdForBooking && booking.date === date) {
+                    const existingStart = new Date(`${booking.date}T${booking.startTime}`);
+                    const existingEnd = new Date(`${booking.date}T${booking.endTime}`);
+
+                    return (startDateTime < existingEnd && endDateTime > existingStart);
+                }
+                return false;
+            });
+
+            if (overlappingBooking) {
+                displayError('bookingStartTime', `Selected room is now booked from ${overlappingBooking.startTime} to ${overlappingBooking.endTime} on this date. Please select another room or time.`);
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            const newBooking = {
+                id: Date.now().toString(),
+                roomId: selectedRoomIdForBooking,
+                roomName: selectedRoomNameForBooking,
+                date,
+                startTime,
+                endTime,
+                purpose: purpose || 'No purpose specified', // Set default if purpose is empty
+                timestamp: new Date().toISOString() // For sorting or tracking creation time
+            };
+
+            bookings.push(newBooking);
+            saveData(BOOKINGS_STORAGE_KEY, bookings);
+
+            // Clear form fields and reset selected room state
+            bookingDateInput.value = '';
+            bookingStartTimeInput.value = '09:00'; // Reset to default
+            bookingEndTimeInput.value = '10:00';   // Reset to default
+            bookingPurposeInput.value = '';
+
+            selectedRoomIdForBooking = null;
+            selectedRoomNameForBooking = null;
+            document.getElementById('selectedRoomDisplay').textContent = 'No room selected';
+            document.getElementById('selectedRoomDisplay').classList.add('hidden'); // Hide until a room is selected again
+
+            renderBookings();
+            renderRooms(); // Re-render rooms to reflect availability
+            showMessageModal(`Room "${newBooking.roomName}" booked successfully for ${date} from ${startTime} to ${endTime}!`);
+        }
+
+        /**
+         * Deletes a booking.
+         * @param {string} bookingId - The ID of the booking to delete.
+         */
+        function deleteBooking(bookingId) {
+            showConfirmModal('Are you sure you want to cancel this booking?', (confirmed) => {
+                if (confirmed) {
+                    let bookings = getData(BOOKINGS_STORAGE_KEY);
+                    bookings = bookings.filter(booking => booking.id !== bookingId);
+                    saveData(BOOKINGS_STORAGE_KEY, bookings);
+                    renderBookings();
+                    renderRooms(); // Re-render rooms to reflect availability
+                    showMessageModal('Booking cancelled.');
+                }
+            });
+        }
+
+        /**
+         * Renders the list of upcoming bookings.
+         */
+        function renderBookings() {
+            const bookingListDiv = document.getElementById('bookingList');
+            const noBookingsMessage = document.getElementById('noBookingsMessage');
+            let bookings = getData(BOOKINGS_STORAGE_KEY);
+
+            // Filter out past bookings and sort by date and then start time
+            const now = new Date();
+            bookings = bookings.filter(booking => {
+                const bookingDateTime = new Date(`${booking.date}T${booking.endTime}`);
+                return bookingDateTime > now;
+            }).sort((a, b) => {
+                const dateA = new Date(`${a.date}T${a.startTime}`);
+                const dateB = new Date(`${b.date}T${b.startTime}`);
+                return dateA - dateB;
+            });
+
+            bookingListDiv.innerHTML = ''; // Clear existing list
+
+            /**if (bookings.length === 0) {
+                noBookingsMessage.style.display = 'block';
+                // Ensure the message spans full width in the grid
+                noBookingsMessage.classList.add('md:col-span-full');
+                return;
+            } else {
+                noBookingsMessage.style.display = 'none'; 
+                noBookingsMessage.classList.remove('md:col-span-full');
+            }*/
+
+            bookings.forEach(booking => {
+                const bookingCard = document.createElement('div');
+                // Removed md:flex-row from bookingCard as it's now a grid item and width is constrained
+                bookingCard.className = 'card flex flex-col justify-between items-start p-4 bg-green-50 text-green-800 border border-green-200 rounded-lg shadow-sm';
+                bookingCard.innerHTML = `
+                    <div class="flex-grow mb-2 md:mb-0">
+                        <p class="font-semibold text-lg">${booking.roomName}</p>
+                        <p class="text-sm">Date: ${booking.date}</p>
+                        <p class="text-sm">Time: ${booking.startTime} - ${booking.endTime}</p>
+                        <p class="text-sm">Purpose: ${booking.purpose}</p>
+                    </div>
+                    <button onclick="deleteBooking('${booking.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm self-end md:self-center">Cancel</button>
+                `;
+                bookingListDiv.appendChild(bookingCard);
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date as minimum for booking date input
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('bookingDate').min = `${year}-${month}-${day}`;
+
+            // Initialize time inputs with default values
+            document.getElementById('bookingStartTime').value = '09:00';
+            document.getElementById('bookingEndTime').value = '10:00';
+
+            // Add event listeners to date and time inputs to re-render available rooms dynamically
+            document.getElementById('bookingDate').addEventListener('change', renderRooms);
+            document.getElementById('bookingStartTime').addEventListener('change', renderRooms);
+            document.getElementById('bookingEndTime').addEventListener('change', renderRooms);
+
+            // Initial render of all sections
+            renderRooms();
+            renderBookings();
+        });
+    </script>
+</body>
+</html>
