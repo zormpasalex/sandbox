@@ -203,12 +203,12 @@
 
         <h1 class="section-title text-center">Meeting Room Booking</h1>
 
-        <!-- Upcoming Bookings Section - Moved to top and changed to grid layout -->
+        <!-- Scheduled Meetings Section - Moved to top and changed to grid layout -->
         <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
-            <h2 class="text-2xl font-semibold text-gray-800">Upcoming Bookings</h2>
+            <h2 class="text-2xl font-semibold text-gray-800">Scheduled Meetings</h2>
             <div id="bookingList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <!-- Bookings will be loaded here by JavaScript -->
-                <p id="noBookingsMessage" class="text-gray-500 italic md:col-span-full">No upcoming bookings. Book a room below!</p>
+                <p id="noBookingsMessage" class="text-gray-500 italic md:col-span-full">No Scheduled Meetings. Book a room below!</p>
             </div>
         </div>
 
@@ -289,8 +289,8 @@
         </div>
 
         <!-- Add Room Section - Moved to last row -->
-        <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
-            <h2 class="text-2xl font-semibold text-gray-800">Add New Room</h2>
+        <!-- <div class="card md:col-span-2"> --> <!--Span full width on medium screens and up -->
+        <!--    <h2 class="text-2xl font-semibold text-gray-800">Add New Room</h2>
             <div class="flex flex-col gap-4">
                 <div>
                     <label for="roomName" class="block text-gray-700 text-sm font-medium mb-1">Room Name</label>
@@ -299,7 +299,7 @@
                 </div>
                 <button onclick="addRoom()">Add Room</button>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <script>
@@ -565,8 +565,8 @@
                     // Use event.stopPropagation() to prevent the delete button click from also selecting the room
                     roomCard.onclick = () => selectRoomForBooking(room.id, room.name);
                     roomCard.innerHTML = `
-                        <span class="font-medium text-lg">${room.name}</span>
-                        <button type="button" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.name}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm">Delete</button>
+                        <span class="font-medium text-lg" style="font-size: 28px;">${room.name}</span>
+                        <!--<button type="button" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.name}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm">Delete</button> -->
                     `;
                     roomListDiv.appendChild(roomCard);
                 }
