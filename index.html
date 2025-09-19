@@ -45,6 +45,7 @@
         .time-input-field {
             border: 1px solid #d1d5db;
             border-radius: 8px; /* Rounded corners for inputs */
+			font-size: 28px;
             padding: 12px 0; /* Adjust padding for text input within time control */
             /* Removed fixed width to allow responsiveness */
             text-align: center;
@@ -166,6 +167,13 @@
             background-color: #e0f2fe; /* Light blue background for selected */
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); /* Stronger shadow for selected */
         }
+		
+		/* Style for the parent div of "Book Room" button*/
+		.flex-div-align-center {
+			/*display: flex;*/
+			justify-content: center; /* Centers the button horizontally */
+			/*align-items: center;*/ /* Centers the button vertically */
+		}
     </style>
 </head>
 <body>
@@ -270,8 +278,8 @@
                     </div>
                     
                     <!-- Book Room Button - Span both columns to center it -->
-                    <div class="md:col-span-2 flex justify-center"> <!-- Added flex justify-center -->
-                        <button onclick="bookRoom()">Book Room</button>
+                    <div class="md:col-span-2 flex flex-col flex-div-align-center"> <!-- Added flex justify-center -->
+                        <button style="padding: 10px 20px 10px 20px; margin: auto;" onclick="bookRoom()">Book Room</button>
                     </div>
                 </div>
             </div>
