@@ -168,11 +168,14 @@
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); /* Stronger shadow for selected */
         }
 		
-		/* Style for the parent div of "Book Room" button*/
 		.flex-div-align-center {
 			/*display: flex;*/
 			justify-content: center; /* Centers the button horizontally */
 			/*align-items: center;*/ /* Centers the button vertically */
+		}
+		
+		#bookingPurpose {
+			padding-left: 8px; /* Shift the placeholder text of the "Purpose" field to the right */
 		}
     </style>
 </head>
@@ -239,7 +242,7 @@
                     <!-- Row 2 & 3: Purpose (Left, spanning 2 rows), Start Time (Right, Row 2), End Time (Right, Row 3) -->
                     <div class="row-span-2"> <!-- Purpose spans two rows -->
                         <label for="bookingPurpose" class="block text-gray-700 text-sm font-medium mb-1">Purpose <span class="text-gray-500 text-xs">(Optional)</span></label>
-                        <textarea id="bookingPurpose" placeholder="e.g., Team meeting, Client presentation" rows="7" class="focus:ring-blue-500 focus:border-blue-500 h-full"></textarea>
+                        <textarea id="bookingPurpose" placeholder="e.g., Team meeting, Client presentation" rows="7" class="focus:ring-blue-500 focus:border-blue-500"></textarea>
                         <p id="bookingPurposeError" class="error-message"></p>
                     </div>
                     
