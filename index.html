@@ -224,13 +224,13 @@
                 </button>
             </div>
             <div class="grid grid-cols-7 gap-2 text-center">
-                <div class="font-bold text-gray-700">Sun</div>
                 <div class="font-bold text-gray-700">Mon</div>
                 <div class="font-bold text-gray-700">Tue</div>
                 <div class="font-bold text-gray-700">Wed</div>
                 <div class="font-bold text-gray-700">Thu</div>
                 <div class="font-bold text-gray-700">Fri</div>
                 <div class="font-bold text-gray-700">Sat</div>
+                <div class="font-bold text-gray-700">Sun</div>
             </div>
             <div id="calendarDaysGrid" class="grid grid-cols-7 gap-2 text-center"></div>
         </div>
@@ -320,8 +320,8 @@
         </div>
 
         <!-- Add Room Section - Moved to last row -->
-        <!-- <div class="card md:col-span-2"> --> <!--Span full width on medium screens and up -->
-        <!--    <h2 class="text-2xl font-semibold text-gray-800">Add New Room</h2>
+        <!-- <div class="card md:col-span-2"> --> <!-- Span full width on medium screens and up -->
+           <!-- <h2 class="text-2xl font-semibold text-gray-800">Add New Room</h2>
             <div class="flex flex-col gap-4">
                 <div>
                     <label for="roomName" class="block text-gray-700 text-sm font-medium mb-1">Room Name</label>
@@ -597,7 +597,7 @@
                     roomCard.onclick = () => selectRoomForBooking(room.id, room.name);
                     roomCard.innerHTML = `
                         <span class="font-medium text-lg" style="font-size: 28px;">${room.name}</span>
-                        <!--<button type="button" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.name}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm">Delete</button> -->
+                        <!-- <button type="button" onclick="event.stopPropagation(); deleteRoom('${room.id}', '${room.name}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm">Delete</button> -->
                     `;
                     roomListDiv.appendChild(roomCard);
                 }
@@ -862,6 +862,7 @@
             // Initial render of all sections
             renderRooms();
             renderBookings();
+            renderCalendar();
         });
 
         // --- Calendar Management Variables ---
@@ -875,6 +876,10 @@
             const calendarDaysGrid = document.getElementById('calendarDaysGrid');
             const currentMonthYearHeader = document.getElementById('currentMonthYear');
             const allBookings = getData(BOOKINGS_STORAGE_KEY);
+            const today = new Date();
+            const todayDay = today.getDate();
+            const todayMonth = today.getMonth();
+            const todayYear = today.getFullYear();
 
             // Get the month and year from the currentCalendarDate
             const year = currentCalendarDate.getFullYear();
@@ -890,8 +895,11 @@
             const firstDayOfMonth = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+            // Adjust the start index for the calendar grid
+            const startDayIndex = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+
             // Add empty placeholders for the days before the 1st
-            for (let i = 0; i < firstDayOfMonth; i++) {
+            for (let i = 0; i < startDayIndex; i++) {
                 const emptyDay = document.createElement('div');
                 emptyDay.className = 'py-2';
                 calendarDaysGrid.appendChild(emptyDay);
@@ -903,21 +911,37 @@
                 dayElement.className = 'py-2 rounded-full cursor-pointer transition-colors duration-200';
                 dayElement.textContent = day;
 
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const isWeekend = (dayOfWeek === 6) || (dayOfWeek === 0);
+
                 // Check if this date has a booking
                 const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 const hasBooking = allBookings.some(booking => booking.date === formattedDate);
-
-                if (hasBooking) {
+                
+                if (isWeekend || (today.getDate() > day && todayMonth == month))  {
+                    dayElement.classList.add('bg-gray-200', 'text-gray-500', 'cursor-not-allowed');
+                } else if (hasBooking) {
                     dayElement.classList.add('bg-blue-500', 'text-white', 'font-bold', 'hover:bg-blue-600');
                 } else {
                     dayElement.classList.add('bg-gray-100', 'hover:bg-gray-200');
                 }
 
-                dayElement.onclick = () => {
-                    // This functionality is for user interaction, like selecting a date
-                    document.getElementById('bookingDate').value = formattedDate;
-                    renderRooms(); // Re-render available rooms based on the selected calendar date
-                };
+                // dayElement.onclick = () => {
+                //     // This functionality is for user interaction, like selecting a date
+                //     document.getElementById('bookingDate').value = formattedDate;
+                //     renderRooms(); // Re-render available rooms based on the selected calendar date
+                // };
+
+                if (year === todayYear && month === todayMonth && day === todayDay) {
+                    dayElement.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+                }
+
+                if (!isWeekend && today.getDate() <= day) {
+                    dayElement.onclick = () => {
+                        document.getElementById('bookingDate').value = formattedDate;
+                        renderRooms(); // Re-render available rooms based on the selected calendar date
+                    };
+                }
 
                 calendarDaysGrid.appendChild(dayElement);
             }
@@ -925,8 +949,11 @@
 
         // Add event listeners for month navigation buttons
         document.getElementById('prevMonthBtn').addEventListener('click', () => {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            renderCalendar();
+            const currDate = new Date();
+            if (currentCalendarDate.getMonth() > currDate.getMonth()) {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            }
         });
 
         document.getElementById('nextMonthBtn').addEventListener('click', () => {
