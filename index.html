@@ -182,6 +182,11 @@
             padding: 16px 0; /* Custom padding for the Start and End Time Inputs */
         }
 
+        #confirmYesBtn, #confirmNoBtn, #messageModal, #OKbtn {
+            font-size: 20px;
+            padding: 10px 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -191,7 +196,7 @@
             <div class="modal-content">
                 <span class="modal-close-button" onclick="closeMessageModal()">&times;</span>
                 <p id="modalMessage" class="text-lg font-medium text-gray-800"></p>
-                <button onclick="closeMessageModal()" class="mt-6">OK</button>
+                <button id="OKbtn" onclick="closeMessageModal()" class="bg-blue-300 mt-6">OK</button>
             </div>
         </div>
 
@@ -207,7 +212,28 @@
         </div>
 
         <!-- <h1 class="section-title text-center">Meeting Room Booking</h1> -->
-
+        <div class="card md:col-span-2">
+            <h2 class="text-2xl font-semibold text-gray-800">Monthly View</h2>
+            <div class="flex items-center justify-between mb-4">
+                <button id="prevMonthBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-l-lg">
+                    &lt;
+                </button>
+                <h3 id="currentMonthYear" class="text-xl font-semibold text-center flex-grow"></h3>
+                <button id="nextMonthBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-r-lg">
+                    &gt;
+                </button>
+            </div>
+            <div class="grid grid-cols-7 gap-2 text-center">
+                <div class="font-bold text-gray-700">Sun</div>
+                <div class="font-bold text-gray-700">Mon</div>
+                <div class="font-bold text-gray-700">Tue</div>
+                <div class="font-bold text-gray-700">Wed</div>
+                <div class="font-bold text-gray-700">Thu</div>
+                <div class="font-bold text-gray-700">Fri</div>
+                <div class="font-bold text-gray-700">Sat</div>
+            </div>
+            <div id="calendarDaysGrid" class="grid grid-cols-7 gap-2 text-center"></div>
+        </div>
         <!-- Scheduled Meetings Section -->
         <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
             <h2 class="text-2xl font-semibold text-gray-800">Scheduled Meetings</h2>
@@ -221,7 +247,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
             <!-- Available Rooms Section - Moved to second row, left -->
             <div class="card">
-                <h2 class="text-2xl font-semibold text-gray-800">Select a Room</h2>
+                <h2 class="text-2xl font-semibold text-gray-800">1. Select a Room</h2>
                 <div id="roomList" class="grid grid-cols-1 gap-4">
                     <!-- Rooms will be loaded here by JavaScript -->
                     <p id="noRoomsMessage" class="text-gray-500 italic">No rooms added yet. Add a room below!</p>
@@ -230,7 +256,7 @@
 
             <!-- Book Room Section -->
             <div class="card">
-                <h2 class="text-2xl font-semibold text-gray-800">Book a Room</h2>
+                <h2 class="text-2xl font-semibold text-gray-800">2. Book a Room</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                     <!-- Row 1: Selected Room Display (Left), Date (Right) -->
                     <div>
@@ -285,9 +311,9 @@
                         <p id="bookingEndTimeError" class="error-message"></p>
                     </div>
                     
-                    <!-- Book Room Button - Span both columns to center it -->
-                    <div class="md:col-span-3 flex flex-col flex-div-align-center text-xl">
-                        <button style="padding: 10px 20px 10px 20px; margin: 20px 150px;" onclick="bookRoom()">Book Room</button>
+                    <!-- Book Room Button -->
+                    <div class="row span-1 md:col-span-3 flex flex-col flex-div-align-center text-xl">
+                        <button class="bg-blue-300" style="padding: 10px 20px 10px 20px; margin: 20px 150px;" onclick="bookRoom()">Confirm Booking</button>
                     </div>
                 </div>
             </div>
@@ -745,6 +771,7 @@
 
             renderBookings();
             renderRooms(); // Re-render rooms to reflect availability
+            renderCalendar();
             showMessageModal(`Room "${newBooking.roomName}" booked successfully for ${date} from ${startTime} to ${endTime}!`);
         }
 
@@ -760,6 +787,7 @@
                     saveData(BOOKINGS_STORAGE_KEY, bookings);
                     renderBookings();
                     renderRooms(); // Re-render rooms to reflect availability
+                    renderCalendar();
                     showMessageModal('Booking cancelled.');
                 }
             });
@@ -834,6 +862,82 @@
             // Initial render of all sections
             renderRooms();
             renderBookings();
+        });
+
+        // --- Calendar Management Variables ---
+        let currentCalendarDate = new Date();
+
+        // --- Calendar Management Functions ---
+        /**
+        * Renders the calendar for the current month.
+        */
+        function renderCalendar() {
+            const calendarDaysGrid = document.getElementById('calendarDaysGrid');
+            const currentMonthYearHeader = document.getElementById('currentMonthYear');
+            const allBookings = getData(BOOKINGS_STORAGE_KEY);
+
+            // Get the month and year from the currentCalendarDate
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            // Set the header text
+            currentMonthYearHeader.textContent = currentCalendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Clear previous calendar days
+            calendarDaysGrid.innerHTML = '';
+
+            // Get the first day of the month and the number of days in the month
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Add empty placeholders for the days before the 1st
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'py-2';
+                calendarDaysGrid.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'py-2 rounded-full cursor-pointer transition-colors duration-200';
+                dayElement.textContent = day;
+
+                // Check if this date has a booking
+                const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasBooking = allBookings.some(booking => booking.date === formattedDate);
+
+                if (hasBooking) {
+                    dayElement.classList.add('bg-blue-500', 'text-white', 'font-bold', 'hover:bg-blue-600');
+                } else {
+                    dayElement.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                }
+
+                dayElement.onclick = () => {
+                    // This functionality is for user interaction, like selecting a date
+                    document.getElementById('bookingDate').value = formattedDate;
+                    renderRooms(); // Re-render available rooms based on the selected calendar date
+                };
+
+                calendarDaysGrid.appendChild(dayElement);
+            }
+        }
+
+        // Add event listeners for month navigation buttons
+        document.getElementById('prevMonthBtn').addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonthBtn').addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Call renderCalendar on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Other existing code...
+            renderCalendar(); // Initial render of the calendar
         });
     </script>
 </body>
