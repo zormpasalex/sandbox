@@ -177,6 +177,11 @@
 		#bookingPurpose {
 			padding-left: 8px; /* Shift the placeholder text of the "Purpose" field to the right */
 		}
+
+        #bookingStartTime, #bookingEndTime, #bookingDate {
+            padding: 16px 0; /* Custom padding for the Start and End Time Inputs */
+        }
+
     </style>
 </head>
 <body>
@@ -201,9 +206,9 @@
             </div>
         </div>
 
-        <h1 class="section-title text-center">Meeting Room Booking</h1>
+        <!-- <h1 class="section-title text-center">Meeting Room Booking</h1> -->
 
-        <!-- Scheduled Meetings Section - Moved to top and changed to grid layout -->
+        <!-- Scheduled Meetings Section -->
         <div class="card md:col-span-2"> <!-- Span full width on medium screens and up -->
             <h2 class="text-2xl font-semibold text-gray-800">Scheduled Meetings</h2>
             <div id="bookingList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -212,52 +217,52 @@
             </div>
         </div>
 
-        <!-- Second Row: Available Rooms (Left) and Book a Room (Right) -->
+        <!-- Available Rooms (Left) and Book a Room (Right) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
             <!-- Available Rooms Section - Moved to second row, left -->
             <div class="card">
-                <h2 class="text-2xl font-semibold text-gray-800">Available Rooms</h2>
+                <h2 class="text-2xl font-semibold text-gray-800">Select a Room</h2>
                 <div id="roomList" class="grid grid-cols-1 gap-4">
                     <!-- Rooms will be loaded here by JavaScript -->
                     <p id="noRoomsMessage" class="text-gray-500 italic">No rooms added yet. Add a room below!</p>
                 </div>
             </div>
 
-            <!-- Book Room Section - Moved to second row, right -->
+            <!-- Book Room Section -->
             <div class="card">
                 <h2 class="text-2xl font-semibold text-gray-800">Book a Room</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                     <!-- Row 1: Selected Room Display (Left), Date (Right) -->
                     <div>
-                        <label class="block text-gray-700 text-sm font-medium mb-1">Selected Room</label>
-                        <p id="selectedRoomDisplay" class="text-lg font-semibold text-blue-700 mb-2 hidden">No room selected</p>
+                        <label class="block text-gray-700 text-xl font-medium mb-1">Selected Room</label>
+                        <p id="selectedRoomDisplay" class="text-lg font-semibold text-blue-700 mb-2">No room selected</p>
                         <p id="bookingRoomError" class="error-message"></p>
                     </div>
                     <div>
-                        <label for="bookingDate" class="block text-gray-700 text-sm font-medium mb-1">Date</label>
-                        <input type="date" id="bookingDate" class="focus:ring-blue-500 focus:border-blue-500">
+                        <label for="bookingDate" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">Date</label>
+                        <input type="date" id="bookingDate" class="focus:ring-blue-500 focus:border-blue-500 text-xl">
                         <p id="bookingDateError" class="error-message"></p>
                     </div>
 
                     <!-- Row 2 & 3: Purpose (Left, spanning 2 rows), Start Time (Right, Row 2), End Time (Right, Row 3) -->
                     <div class="row-span-2"> <!-- Purpose spans two rows -->
-                        <label for="bookingPurpose" class="block text-gray-700 text-sm font-medium mb-1">Purpose <span class="text-gray-500 text-xs">(Optional)</span></label>
+                        <label for="bookingPurpose" class="block text-gray-700 text-xl font-medium mb-1">Purpose <span class="text-gray-500 text-xs">(Optional)</span></label>
                         <textarea id="bookingPurpose" placeholder="e.g., Team meeting, Client presentation" rows="7" class="focus:ring-blue-500 focus:border-blue-500"></textarea>
                         <p id="bookingPurposeError" class="error-message"></p>
                     </div>
                     
                     <!-- Start Time Control (Right, Row 2) -->
                     <div>
-                        <label for="bookingStartTime" class="block text-gray-700 text-sm font-medium mb-1">Start Time</label>
+                        <label for="bookingStartTime" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">Start</label>
                         <div class="flex items-center justify-around space-x-2"> <!-- Changed justify-center to justify-around -->
-                            <div class="flex flex-col">
-                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', 1)" class="time-control-button mb-1">▲</button>
-                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', -1)" class="time-control-button">▼</button>
+                            <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', 1)" class="time-control-button mb-1">h+</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', -1)" class="time-control-button">h-</button>
                             </div>
                             <input type="text" id="bookingStartTime" value="09:00" readonly class="time-input-field w-full"> <!-- Added w-full -->
-                            <div class="flex flex-col">
-                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', 1)" class="time-control-button mb-1">▲</button>
-                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', -1)" class="time-control-button">▼</button>
+                            <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', 1)" class="time-control-button mb-1">m+</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', -1)" class="time-control-button">m-</button>
                             </div>
                         </div>
                         <p id="bookingStartTimeError" class="error-message"></p>
@@ -265,24 +270,24 @@
 
                     <!-- End Time Control (Right, Row 3) - This will naturally fall into the third row on the right due to grid flow -->
                     <div>
-                        <label for="bookingEndTime" class="block text-gray-700 text-sm font-medium mb-1">End Time</label>
+                        <label for="bookingEndTime" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">End</label>
                         <div class="flex items-center justify-around space-x-2"> <!-- Changed justify-center to justify-around -->
-                            <div class="flex flex-col">
-                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', 1)" class="time-control-button mb-1">▲</button>
-                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', -1)" class="time-control-button">▼</button>
+                            <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', 1)" class="time-control-button mb-1">h+</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', -1)" class="time-control-button">h-</button>
                             </div>
                             <input type="text" id="bookingEndTime" value="10:00" readonly class="time-input-field w-full"> <!-- Added w-full -->
-                            <div class="flex flex-col">
-                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', 1)" class="time-control-button mb-1">▲</button>
-                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', -1)" class="time-control-button">▼</button>
+                            <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', 1)" class="time-control-button mb-1">m+</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', -1)" class="time-control-button">m-</button>
                             </div>
                         </div>
                         <p id="bookingEndTimeError" class="error-message"></p>
                     </div>
                     
                     <!-- Book Room Button - Span both columns to center it -->
-                    <div class="md:col-span-2 flex flex-col flex-div-align-center"> <!-- Added flex justify-center -->
-                        <button style="padding: 10px 20px 10px 20px; margin: auto;" onclick="bookRoom()">Book Room</button>
+                    <div class="md:col-span-3 flex flex-col flex-div-align-center text-xl">
+                        <button style="padding: 10px 20px 10px 20px; margin: 20px 150px;" onclick="bookRoom()">Book Room</button>
                     </div>
                 </div>
             </div>
