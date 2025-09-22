@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Meeting Room Booker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the app */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top to prevent excessive vertical centering on large content */
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px; /* Rounded corners for the main container */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 100%;
+            max-width: 900px; /* Max width for larger screens */
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        input[type="text"], input[type="date"], select, textarea {
+            border: 1px solid #d1d5db;
+            border-radius: 8px; /* Rounded corners for inputs */
+            padding: 12px 16px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue border on focus */
+        }
+        /* Style for the time input text field */
+        .time-input-field {
+            border: 1px solid #d1d5db;
+            border-radius: 8px; /* Rounded corners for inputs */
+			font-size: 28px;
+            padding: 12px 0; /* Adjust padding for text input within time control */
+            /* Removed fixed width to allow responsiveness */
+            text-align: center;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .time-input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        /* General button styling */
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px; /* Rounded corners for buttons */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+        }
+        button:hover {
+            background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        /* Style for increment/decrement buttons */
+        .time-control-button {
+            background-color: #e5e7eb; /* Gray-200 */
+            color: #4b5563; /* Gray-700 */
+            width: 30px; /* Fixed width for small buttons */
+            height: 30px; /* Fixed height for small buttons */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px; /* Slightly less rounded than main buttons */
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+            box-shadow: none; /* No shadow for these small buttons */
+            padding: 0; /* Remove default padding */
+            flex-shrink: 0; /* Prevent buttons from shrinking */
+        }
+        .time-control-button:hover {
+            background-color: #d1d5db; /* Gray-300 */
+            color: #1f2937; /* Gray-900 */
+            transform: none; /* No transform on hover for these */
+        }
+        .time-control-button:active {
+            background-color: #9ca3af; /* Gray-400 */
+        }
+
+        .section-title {
+            font-size: 1.75rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #1f2937; /* gray-900 */
+            margin-bottom: 16px;
+        }
+        .card {
+            background-color: #f9fafb; /* light gray background for cards */
+            border-radius: 16px; /* Consistent rounded corners */
+            padding: 24px; /* Adjusted padding */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Stronger shadow */
+            display: flex;
+            flex-direction: column;
+            gap: 16px; /* Adjusted gap */
+        }
+        .error-message {
+            color: #ef4444; /* red-500 */
+            font-size: 0.875rem; /* text-sm */
+            margin-top: 8px;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280; /* gray-500 */
+        }
+        .modal-close-button:hover {
+            color: #1f2937; /* gray-900 */
+        }
+        /* Style for selected room card */
+        .room-card.selected {
+            /* border-color: #3b82f6; Blue border for selected */
+            border-color: #0f573c;
+            /* background-color: #e0f2fe; Light blue background for selected */
+            background-color: #9adac3;
+            color: black;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); /* Stronger shadow for selected */
+        }
+		
+		.flex-div-align-center {
+			/*display: flex;*/
+			justify-content: center; /* Centers the button horizontally */
+			/*align-items: center;*/ /* Centers the button vertically */
+		}
+		
+		#bookingPurpose {
+			padding-left: 8px; /* Shift the placeholder text of the "Purpose" field to the right */
+		}
+
+        #bookingStartTime, #bookingEndTime, #bookingDate {
+            padding: 16px 0; /* Custom padding for the Start and End Time Inputs */
+        }
+
+        #confirmYesBtn, #confirmNoBtn, #messageModal, #OKbtn {
+            font-size: 20px;
+            padding: 10px 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close-button" onclick="closeMessageModal()">&times;</span>
+                <p id="modalMessage" class="text-lg font-medium text-gray-800"></p>
+                <button id="OKbtn" onclick="closeMessageModal()" class="bg-blue-300 mt-6">OK</button>
+            </div>
+        </div>
+
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <p id="confirmMessage" class="text-lg font-medium text-gray-800 mb-6"></p>
+                <div class="flex justify-center gap-4">
+                    <button id="confirmYesBtn" onclick="closeConfirmationModal()" class="bg-red-500 hover:bg-red-600">Yes</button>
+                    <button id="confirmNoBtn" onclick="closeConfirmationModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800">No</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card md:col-span-2">
+            <h2 class="text-2xl font-semibold text-gray-800">Monthly View</h2>
+            <div class="flex items-center justify-between mb-4">
+                <button id="prevMonthBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-l-lg">
+                    &lt;
+                </button>
+                <h3 id="currentMonthYear" class="text-xl font-semibold text-center flex-grow"></h3>
+                <button id="nextMonthBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-r-lg">
+                    &gt;
+                </button>
+            </div>
+            <div class="grid grid-cols-7 gap-2 text-center">
+                <div class="font-bold text-gray-700">Mon</div>
+                <div class="font-bold text-gray-700">Tue</div>
+                <div class="font-bold text-gray-700">Wed</div>
+                <div class="font-bold text-gray-700">Thu</div>
+                <div class="font-bold text-gray-700">Fri</div>
+                <div class="font-bold text-gray-700">Sat</div>
+                <div class="font-bold text-gray-700">Sun</div>
+            </div>
+            <div id="calendarDaysGrid" class="grid grid-cols-7 gap-2 text-center"></div>
+        </div>
+        <div class="card md:col-span-2"> <h2 class="text-2xl font-semibold text-gray-800">Scheduled Meetings</h2>
+            <div id="bookingList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <p id="noBookingsMessage" class="text-gray-500 italic md:col-span-full">No Scheduled Meetings. Book a room below!</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-gray-800">1. Select a Room</h2>
+                <div id="roomList" class="grid grid-cols-1 gap-4">
+                    <p id="noRoomsMessage" class="text-gray-500 italic">No rooms added yet. Add a room below!</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-2xl font-semibold text-gray-800">2. Book a Room</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+                    <div>
+                        <label class="block text-gray-700 text-xl font-medium mb-1">Selected Room</label>
+                        <p id="selectedRoomDisplay" class="text-lg font-semibold text-blue-700 mb-2">No room selected</p>
+                        <p id="bookingRoomError" class="error-message"></p>
+                    </div>
+                    <div>
+                        <label for="bookingDate" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">Date</label>
+                        <input type="date" id="bookingDate" class="focus:ring-blue-500 focus:border-blue-500 text-xl">
+                        <p id="bookingDateError" class="error-message"></p>
+                    </div>
+
+                    <div class="row-span-2"> <label for="bookingPurpose" class="block text-gray-700 text-xl font-medium mb-1">Purpose <span class="text-gray-500 text-xs">(Optional)</span></label>
+                        <textarea id="bookingPurpose" placeholder="e.g., Team meeting, Client presentation" rows="7" class="focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        <p id="bookingPurposeError" class="error-message"></p>
+                    </div>
+                    
+                    <div>
+                        <label for="bookingStartTime" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">Start</label>
+                        <div class="flex items-center justify-around space-x-2"> <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', 1)" class="time-control-button mb-1">h+</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'hour', -1)" class="time-control-button">h-</button>
+                            </div>
+                            <input type="text" id="bookingStartTime" value="09:00" readonly class="time-input-field w-full"> <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', 1)" class="time-control-button mb-1">m+</button>
+                                <button type="button" onclick="adjustTime('bookingStartTime', 'minute', -1)" class="time-control-button">m-</button>
+                            </div>
+                        </div>
+                        <p id="bookingStartTimeError" class="error-message"></p>
+                    </div>
+
+                    <div>
+                        <label for="bookingEndTime" class="flex items-center justify-around text-gray-700 text-xl font-medium mb-1">End</label>
+                        <div class="flex items-center justify-around space-x-2"> <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', 1)" class="time-control-button mb-1">h+</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'hour', -1)" class="time-control-button">h-</button>
+                            </div>
+                            <input type="text" id="bookingEndTime" value="10:00" readonly class="time-input-field w-full"> <div class="flex flex-col space-y-3">
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', 1)" class="time-control-button mb-1">m+</button>
+                                <button type="button" onclick="adjustTime('bookingEndTime', 'minute', -1)" class="time-control-button">m-</button>
+                            </div>
+                        </div>
+                        <p id="bookingEndTimeError" class="error-message"></p>
+                    </div>
+                    
+                    <div class="row span-1 md:col-span-3 flex flex-col flex-div-align-center text-xl">
+                        <button class="bg-blue-300" style="padding: 10px 20px 10px 20px; margin: 20px 150px;" onclick="bookRoom()">Confirm Booking</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+    <script>
+        // --- Global Variables and Constants ---
+        const BOOKINGS_STORAGE_KEY = 'roomBookings';
+
+        // Global state for the room selected for booking
+        let selectedRoomIdForBooking = null;
+        let selectedRoomNameForBooking = null;
+        
+        // --- Define the rooms directly in the script ---
+        const PREDEFINED_ROOMS = [
+            { id: 'athena', name: 'Athena' },
+            { id: 'capsule', name: 'Capsule' }
+        ];
+
+        // --- Utility Functions ---
+
+        /**
+         * Shows a custom modal message to the user.
+         * @param {string} message - The message to display.
+         */
+        function showMessageModal(message) {
+            const modal = document.getElementById('messageModal');
+            const modalMessage = document.getElementById('modalMessage');
+            modalMessage.textContent = message;
+            modal.classList.add('show');
+        }
+
+        /**
+         * Closes the custom modal message.
+         */
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.remove('show');
+        }
+		
+		function closeConfirmationModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('show');
+        }
+
+        /**
+         * Shows a custom confirmation modal to the user.
+         * @param {string} message - The message to display in the confirmation modal.
+         * @param {Function} onConfirm - Callback function to execute if 'Yes' is clicked.
+         */
+        function showConfirmModal(message, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const confirmMessage = document.getElementById('confirmMessage');
+            const confirmYesBtn = document.getElementById('confirmYesBtn');
+            const confirmNoBtn = document.getElementById('confirmNoBtn');
+
+            confirmMessage.textContent = message;
+            modal.classList.add('show');
+
+            const handleYes = () => {
+                onConfirm(true);
+                modal.classList.remove('show');
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+            };
+
+            const handleNo = () => {
+                onConfirm(false);
+                modal.classList.remove('show');
+                confirmYesBtn.removeEventListener('click', handleYes);
+                confirmNoBtn.removeEventListener('click', handleNo);
+            };
+
+            confirmYesBtn.addEventListener('click', handleYes);
+            confirmNoBtn.addEventListener('click', handleNo);
+        }
+
+
+        /**
+         * Gets data from localStorage or a predefined list for rooms.
+         * @param {string} key - The key for the data.
+         * @returns {Array} - Parsed array of data, or empty array if not found.
+         */
+        function getData(key) {
+            // Check if the key is for rooms and return the predefined list
+            if (key === 'meetingRooms') {
+                return PREDEFINED_ROOMS;
+            }
+            // For other keys (like bookings), continue to use localStorage
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error parsing data from localStorage for key "${key}":`, e);
+                return [];
+            }
+        }
+
+        /**
+         * Saves data to localStorage.
+         * @param {string} key - The key for the data.
+         * @param {Array} data - The array of data to save.
+         */
+        function saveData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving data to localStorage for key "${key}":`, e);
+                showMessageModal("Could not save data. Your device storage might be full or permissions are restricted.");
+            }
+        }
+
+        /**
+         * Clears an error message for a given input field.
+         * @param {string} elementId - The ID of the input element.
+         */
+        function clearError(elementId) {
+            const errorElement = document.getElementById(`${elementId}Error`);
+            if (errorElement) {
+                errorElement.textContent = '';
+            }
+        }
+
+        /**
+         * Displays an error message for a given input field.
+         * @param {string} elementId - The ID of the input element.
+         * @param {string} message - The error message to display.
+         */
+        function displayError(elementId, message) {
+            const errorElement = document.getElementById(`${elementId}Error`);
+            if (errorElement) {
+                errorElement.textContent = message;
+            }
+        }
+
+        // --- Room Management Functions (Modified) ---
+
+        // The addRoom and deleteRoom functions are no longer needed
+        // since rooms are hardcoded. We will keep them but comment them out
+        // to show they are not used.
+
+        // function addRoom() { ... }
+        // function deleteRoom() { ... }
+
+        /**
+         * Selects a room from the available list for booking.
+         * @param {string} roomId - The ID of the room to select.
+         * @param {string} roomName - The name of the room to select.
+         */
+        function selectRoomForBooking(roomId, roomName) {
+            selectedRoomIdForBooking = roomId;
+            selectedRoomNameForBooking = roomName;
+
+            const selectedRoomDisplay = document.getElementById('selectedRoomDisplay');
+            selectedRoomDisplay.textContent = `Selected: ${roomName}`;
+            selectedRoomDisplay.classList.remove('hidden'); // Ensure it's visible
+
+            // Remove 'selected' class from all room cards
+            document.querySelectorAll('#roomList .room-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add 'selected' class to the clicked room card
+            const clickedCard = document.querySelector(`#roomList div[data-room-id="${roomId}"]`);
+            if (clickedCard) {
+                clickedCard.classList.add('selected');
+            }
+
+            clearError('bookingRoom'); // Clear any previous error for room selection
+        }
+
+        /**
+         * Renders the list of available rooms, now based on the hardcoded list.
+         */
+        function renderRooms() {
+            const roomListDiv = document.getElementById('roomList');
+            const noRoomsMessage = document.getElementById('noRoomsMessage');
+            const allRooms = PREDEFINED_ROOMS; // Use the hardcoded list
+            const allBookings = getData(BOOKINGS_STORAGE_KEY);
+
+            const bookingDate = document.getElementById('bookingDate').value;
+            const bookingStartTime = document.getElementById('bookingStartTime').value;
+            const bookingEndTime = document.getElementById('bookingEndTime').value;
+
+            roomListDiv.innerHTML = ''; // Clear existing list
+
+            let availableRoomsCount = 0;
+
+            allRooms.forEach(room => {
+                let isAvailableForBookingSlot = true; // Assume available until proven otherwise
+
+                // Only filter rooms if a date, start time, and end time are all provided
+                if (bookingDate && bookingStartTime && bookingEndTime) {
+                    const tentativeStartDateTime = new Date(`${bookingDate}T${bookingStartTime}`);
+                    const tentativeEndDateTime = new Date(`${bookingDate}T${bookingEndTime}`);
+
+                    // If selected times are invalid (end before start), room is not available for this specific invalid slot
+                    if (tentativeStartDateTime >= tentativeEndDateTime) {
+                        isAvailableForBookingSlot = false;
+                    } else {
+                        // Check for overlaps with existing bookings for this room on the selected date
+                        const overlappingBooking = allBookings.find(booking => {
+                            if (booking.roomId === room.id && booking.date === bookingDate) {
+                                const existingStart = new Date(`${booking.date}T${booking.startTime}`);
+                                const existingEnd = new Date(`${booking.date}T${booking.endTime}`);
+
+                                // Overlap condition: (StartA < EndB) && (EndA > StartB)
+                                return (tentativeStartDateTime < existingEnd && tentativeEndDateTime > existingStart);
+                            }
+                            return false;
+                        });
+
+                        if (overlappingBooking) {
+                            isAvailableForBookingSlot = false;
+                        }
+                    }
+                }
+
+                // A room is shown in "Available Rooms" if it's available for the selected slot,
+                // OR if no specific slot (date, start time, end time) is selected.
+                if (isAvailableForBookingSlot) {
+                    availableRoomsCount++;
+                    const roomCard = document.createElement('div');
+                    roomCard.className = `room-card card flex justify-between items-center p-4 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg shadow-sm cursor-pointer ${selectedRoomIdForBooking === room.id ? 'selected' : ''}`;
+                    roomCard.setAttribute('data-room-id', room.id); // Add data attribute for easy selection
+                    // Use event.stopPropagation() to prevent the delete button click from also selecting the room
+                    roomCard.onclick = () => selectRoomForBooking(room.id, room.name);
+                    roomCard.innerHTML = `
+                        <span class="font-medium text-lg" style="font-size: 28px;">${room.name}</span>
+                    `;
+                    roomListDiv.appendChild(roomCard);
+                }
+            });
+
+            if (availableRoomsCount === 0) {
+                //noRoomsMessage.style.display = 'block';
+                if (allRooms.length === 0) {
+                    noRoomsMessage.textContent = 'No rooms added yet. Add a room below!';
+                } else if (bookingDate && bookingStartTime && bookingEndTime) {
+                    noRoomsMessage.textContent = 'No rooms available for the selected date and time.';
+                } else {
+                    // If no full booking slot is selected, and there are rooms, but none are available (e.g., all have some future booking)
+                    noRoomsMessage.textContent = 'No rooms currently available.'; 
+                }
+            } else {
+                //noRoomsMessage.style.display = 'none';
+            }
+        }
+
+        /**
+         * Parses a time string (HH:MM) into an object with hour and minute.
+         * @param {string} timeString - The time string in HH:MM format.
+         * @returns {{hour: number, minute: number}} - Object with hour and minute.
+         */
+        function parseTime(timeString) {
+            const parts = timeString.split(':');
+            return {
+                hour: parseInt(parts[0] || '0', 10),
+                minute: parseInt(parts[1] || '0', 10)
+            };
+        }
+
+        /**
+         * Formats hour and minute into a HH:MM time string.
+         * @param {number} hour - The hour (0-23).
+         * @param {number} minute - The minute (0-59).
+         * @returns {string} - Formatted time string (HH:MM).
+         */
+        function formatTime(hour, minute) {
+            return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        }
+
+        /**
+         * Adjusts the time in a given input field.
+         * @param {string} inputId - The ID of the time input field.
+         * @param {'hour'|'minute'} unit - The unit to adjust ('hour' or 'minute').
+         * @param {number} amount - The amount to adjust by (e.g., 1 for increment, -1 for decrement).
+         */
+        function adjustTime(inputId, unit, amount) {
+            const inputElement = document.getElementById(inputId);
+            let { hour, minute } = parseTime(inputElement.value);
+
+            if (unit === 'hour') {
+                hour = (hour + amount + 24) % 24; // Handle 24-hour rollover
+            } else if (unit === 'minute') {
+                minute += amount;
+                if (minute >= 60) {
+                    minute -= 60;
+                    hour = (hour + 1 + 24) % 24;
+                } else if (minute < 0) {
+                    minute += 60;
+                    hour = (hour - 1 + 24) % 24;
+                }
+            }
+            inputElement.value = formatTime(hour, minute);
+            renderRooms(); // Re-render available rooms when time changes
+        }
+
+        // --- Booking Management Functions ---
+
+        /**
+         * Books a room.
+         */
+        function bookRoom() {
+            const bookingDateInput = document.getElementById('bookingDate');
+            const bookingStartTimeInput = document.getElementById('bookingStartTime');
+            const bookingEndTimeInput = document.getElementById('bookingEndTime');
+            const bookingPurposeInput = document.getElementById('bookingPurpose');
+
+            const date = bookingDateInput.value;
+            const startTime = bookingStartTimeInput.value;
+            const endTime = bookingEndTimeInput.value;
+            const purpose = bookingPurposeInput.value.trim();
+
+            // Clear previous errors
+            clearError('bookingRoom');
+            clearError('bookingDate');
+            clearError('bookingStartTime');
+            clearError('bookingEndTime');
+            clearError('bookingPurpose');
+
+            let isValid = true;
+
+            if (!selectedRoomIdForBooking) {
+                displayError('bookingRoom', 'Please select a room from the available list.');
+                isValid = false;
+            }
+            if (!date) {
+                displayError('bookingDate', 'Please select a date.');
+                isValid = false;
+            }
+            if (!startTime) {
+                displayError('bookingStartTime', 'Please enter a start time.');
+                isValid = false;
+            }
+            if (!endTime) {
+                displayError('bookingEndTime', 'Please enter an end time.');
+                isValid = false;
+            }
+            // Purpose is optional, so no 'if (!purpose)' check needed here.
+
+            if (!isValid) {
+                return;
+            }
+
+            // Validate time order
+            const startDateTime = new Date(`${date}T${startTime}`);
+            const endDateTime = new Date(`${date}T${endTime}`);
+
+            const currDate = new Date();
+
+            if (startDateTime >= endDateTime) {
+                displayError('bookingEndTime', 'End time must be after start time.');
+                isValid = false;
+            }
+            
+            // Check for current date validation
+            const today = new Date();
+            const selectedDate = new Date(date);
+            selectedDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                displayError('bookingDate', 'Cannot book a room for a past date.');
+                isValid = false;
+            } else if (selectedDate.getTime() === today.getTime() && startDateTime < new Date()) {
+                displayError('bookingStartTime', 'Cannot book a room for a past time on the current date.');
+                isValid = false;
+            }
+
+            // Re-check for overlaps with the selected room, in case anything changed since selection
+            const bookings = getData(BOOKINGS_STORAGE_KEY);
+            const overlappingBooking = bookings.find(booking => {
+                if (booking.roomId === selectedRoomIdForBooking && booking.date === date) {
+                    const existingStart = new Date(`${booking.date}T${booking.startTime}`);
+                    const existingEnd = new Date(`${booking.date}T${booking.endTime}`);
+
+                    return (startDateTime < existingEnd && endDateTime > existingStart);
+                }
+                return false;
+            });
+
+            if (overlappingBooking) {
+                displayError('bookingStartTime', `Selected room is now booked from ${overlappingBooking.startTime} to ${overlappingBooking.endTime} on this date. Please select another room or time.`);
+                isValid = false;
+            }
+
+            if (!isValid) {
+                return;
+            }
+
+            const newBooking = {
+                id: Date.now().toString(),
+                roomId: selectedRoomIdForBooking,
+                roomName: selectedRoomNameForBooking,
+                date,
+                startTime,
+                endTime,
+                purpose: purpose || 'No purpose specified', // Set default if purpose is empty
+                timestamp: new Date().toISOString() // For sorting or tracking creation time
+            };
+
+            bookings.push(newBooking);
+            saveData(BOOKINGS_STORAGE_KEY, bookings);
+
+            // Clear form fields and reset selected room state
+            bookingDateInput.value = '';
+            bookingStartTimeInput.value = '09:00'; // Reset to default
+            bookingEndTimeInput.value = '10:00';   // Reset to default
+            bookingPurposeInput.value = '';
+
+            selectedRoomIdForBooking = null;
+            selectedRoomNameForBooking = null;
+            document.getElementById('selectedRoomDisplay').textContent = 'No room selected';
+            document.getElementById('selectedRoomDisplay').classList.add('hidden'); // Hide until a room is selected again
+
+            renderBookings();
+            renderRooms(); // Re-render rooms to reflect availability
+            renderCalendar();
+            showMessageModal(`Room "${newBooking.roomName}" booked successfully for ${date} from ${startTime} to ${endTime}!`);
+        }
+
+        /**
+         * Deletes a booking.
+         * @param {string} bookingId - The ID of the booking to delete.
+         */
+        function deleteBooking(bookingId) {
+            showConfirmModal('Are you sure you want to cancel this booking?', (confirmed) => {
+                if (confirmed) {
+                    let bookings = getData(BOOKINGS_STORAGE_KEY);
+                    bookings = bookings.filter(booking => booking.id !== bookingId);
+                    saveData(BOOKINGS_STORAGE_KEY, bookings);
+                    renderBookings();
+                    renderRooms(); // Re-render rooms to reflect availability
+                    renderCalendar();
+                    showMessageModal('Booking cancelled.');
+                }
+            });
+        }
+
+        /**
+         * Renders the list of upcoming bookings.
+         */
+        function renderBookings() {
+            const bookingListDiv = document.getElementById('bookingList');
+            const noBookingsMessage = document.getElementById('noBookingsMessage');
+            let bookings = getData(BOOKINGS_STORAGE_KEY);
+
+            // Filter out past bookings and sort by date and then start time
+            const now = new Date();
+            bookings = bookings.filter(booking => {
+                const bookingDateTime = new Date(`${booking.date}T${booking.endTime}`);
+                return bookingDateTime > now;
+            }).sort((a, b) => {
+                const dateA = new Date(`${a.date}T${a.startTime}`);
+                const dateB = new Date(`${b.date}T${b.startTime}`);
+                return dateA - dateB;
+            });
+
+            bookingListDiv.innerHTML = ''; // Clear existing list
+
+            // if (bookings.length === 0) {
+            //     noBookingsMessage.style.display = 'block';
+            //     // Ensure the message spans full width in the grid
+            //     noBookingsMessage.classList.add('md:col-span-full');
+            // } else {
+            //     noBookingsMessage.style.display = 'none'; 
+            //     noBookingsMessage.classList.remove('md:col-span-full');
+            // }
+
+            bookings.forEach(booking => {
+                const bookingCard = document.createElement('div');
+                // Removed md:flex-row from bookingCard as it's now a grid item and width is constrained
+                bookingCard.className = 'card flex flex-col justify-between items-start p-4 bg-green-50 text-green-800 border border-green-200 rounded-lg shadow-sm';
+                bookingCard.innerHTML = `
+                    <div class="flex-grow mb-2 md:mb-0">
+                        <p class="font-semibold text-lg">${booking.roomName}</p>
+                        <p class="text-sm">Date: ${booking.date}</p>
+                        <p class="text-sm">Time: ${booking.startTime} - ${booking.endTime}</p>
+                        <p class="text-sm">Purpose: ${booking.purpose}</p>
+                    </div>
+                    <button onclick="deleteBooking('${booking.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded-md shadow-sm self-end md:self-center">Cancel</button>
+                `;
+                bookingListDiv.appendChild(bookingCard);
+            });
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set today's date as minimum for booking date input
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('bookingDate').min = `${year}-${month}-${day}`;
+
+            // Initialize time inputs with default values
+            document.getElementById('bookingStartTime').value = '09:00';
+            document.getElementById('bookingEndTime').value = '10:00';
+
+            // Add event listeners to date and time inputs to re-render available rooms dynamically
+            document.getElementById('bookingDate').addEventListener('change', renderRooms);
+            document.getElementById('bookingStartTime').addEventListener('change', renderRooms);
+            document.getElementById('bookingEndTime').addEventListener('change', renderRooms);
+
+            // Initial render of all sections
+            renderBookings();
+            renderRooms();
+            renderCalendar();
+        });
+
+        // --- Calendar Management Variables ---
+        let currentCalendarDate = new Date();
+
+        // --- Calendar Management Functions ---
+        /**
+        * Renders the calendar for the current month.
+        */
+        function renderCalendar() {
+            const calendarDaysGrid = document.getElementById('calendarDaysGrid');
+            const currentMonthYearHeader = document.getElementById('currentMonthYear');
+            const allBookings = getData(BOOKINGS_STORAGE_KEY);
+            const today = new Date();
+            const todayDay = today.getDate();
+            const todayMonth = today.getMonth();
+            const todayYear = today.getFullYear();
+
+            // Get the month and year from the currentCalendarDate
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            // Set the header text
+            currentMonthYearHeader.textContent = currentCalendarDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Clear previous calendar days
+            calendarDaysGrid.innerHTML = '';
+
+            // Get the first day of the month and the number of days in the month
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Adjust the start index for the calendar grid
+            const startDayIndex = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+
+            // Add empty placeholders for the days before the 1st
+            for (let i = 0; i < startDayIndex; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'py-2';
+                calendarDaysGrid.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'py-2 rounded-full cursor-pointer transition-colors duration-200';
+                dayElement.textContent = day;
+
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const isWeekend = (dayOfWeek === 6) || (dayOfWeek === 0);
+                const isPastDay = (year === todayYear && month === todayMonth && day < todayDay);
+
+                // Check if this date has a booking
+                const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasBooking = allBookings.some(booking => booking.date === formattedDate);
+                
+                if (isWeekend || isPastDay) {
+                    dayElement.classList.add('bg-gray-200', 'text-gray-500', 'cursor-not-allowed');
+                } else if (hasBooking) {
+                    dayElement.classList.add('bg-blue-500', 'text-white', 'font-bold', 'hover:bg-blue-600');
+                } else {
+                    dayElement.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                }
+
+                if (year === todayYear && month === todayMonth && day === todayDay) {
+                    dayElement.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+                }
+
+                if (!isWeekend && !isPastDay) {
+                    dayElement.onclick = () => {
+                        document.getElementById('bookingDate').value = formattedDate;
+                        renderRooms(); // Re-render available rooms based on the selected calendar date
+                    };
+                }
+
+                calendarDaysGrid.appendChild(dayElement);
+            }
+        }
+
+        // Add event listeners for month navigation buttons
+        document.getElementById('prevMonthBtn').addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonthBtn').addEventListener('click', () => {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Call renderCalendar on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Other existing code...
+            renderCalendar(); // Initial render of the calendar
+        });
+    </script>
+</body>
+</html>
