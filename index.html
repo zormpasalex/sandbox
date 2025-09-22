@@ -163,8 +163,11 @@
         }
         /* Style for selected room card */
         .room-card.selected {
-            border-color: #3b82f6; /* Blue border for selected */
-            background-color: #e0f2fe; /* Light blue background for selected */
+            /* border-color: #3b82f6; Blue border for selected */
+            border-color: #0f573c;
+            /* background-color: #e0f2fe; Light blue background for selected */
+            background-color: #9adac3;
+            color: black;
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); /* Stronger shadow for selected */
         }
 		
@@ -718,7 +721,9 @@
             const startDateTime = new Date(`${date}T${startTime}`);
             const endDateTime = new Date(`${date}T${endTime}`);
 
-            if (startDateTime >= endDateTime) {
+            const currDate = new Date();
+
+            if (startDateTime >= endDateTime || startTime > currDate.getTime()) {
                 displayError('bookingEndTime', 'End time must be after start time.');
                 isValid = false;
             }
